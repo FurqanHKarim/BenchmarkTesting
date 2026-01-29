@@ -1,0 +1,7 @@
+build/
+.cache/
+.vscode/
+*.exe
+*.o
+*.obj
+results/
