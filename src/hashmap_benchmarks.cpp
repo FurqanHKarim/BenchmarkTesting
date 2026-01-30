@@ -1,3 +1,17 @@
+/**
+ * @file hashmap_benchmarks.cpp
+ * @brief Benchmark comparisons between various C++ hashmap implementations.
+ * 
+ * This file contains benchmarks for:
+ * - std::unordered_map (Standard Library)
+ * - absl::flat_hash_map (Google Abseil)
+ * - robin_hood::unordered_map (Martinus Robin Hood)
+ * - phmap::flat_hash_map (Parallel Hashmap)
+ * 
+ * Benchmarks cover:
+ * - Histogram Sort: Measuring insertion performance and frequency counting.
+ */
+
 #include <benchmark/benchmark.h>
 #include <vector>
 #include <numeric>
@@ -8,21 +22,34 @@
 #include "robin_hood.h"
 #include "parallel_hashmap/phmap.h"
 
-// Helper function to generate Ascending Data
+/**
+ * @brief Generates a vector of integers in ascending order.
+ * @param size Number of elements to generate.
+ * @return std::vector<int> Vector containing [0, 1, ..., size-1].
+ */
 std::vector<int> GenerateAscendingData(size_t size) {
     std::vector<int> data(size);
     std::iota(data.begin(), data.end(), 0);
     return data;
 }
 
-// Helper function to generate Descending Data
+/**
+ * @brief Generates a vector of integers in descending order.
+ * @param size Number of elements to generate.
+ * @return std::vector<int> Vector containing [size-1, size-2, ..., 0].
+ */
 std::vector<int> GenerateDescendingData(size_t size) {
     std::vector<int> data(size);
     std::iota(data.rbegin(), data.rend(),0);
     return data;
 }
 
-// Helper function to generate Random Data
+/**
+ * @brief Generates a vector of random integers.
+ * Uses a fixed seed (42) for reproducible benchmark results.
+ * @param size Number of elements to generate.
+ * @return std::vector<int> Vector containing random integers between 0 and size.
+ */
 std::vector<int> GenerateRandomData(size_t size) {
     std::vector<int> data(size);
     std::mt19937 gen(42); // Fixed seed for reproducibility
@@ -33,6 +60,19 @@ std::vector<int> GenerateRandomData(size_t size) {
     return data;
 }
 
+/**
+ * @brief Performs a histogram sort using the specified Hashmap type.
+ * 
+ * Counts the frequency of each number in the input data and then
+ * reconstructs the data vector based on the sorted order of keys
+ * (implicitly sorted if using an ordered map, but here we iterate 
+ * through the hashmap which is unordered, so the output order 
+ * depends on the hashmap's iteration order).
+ * 
+ * @tparam Hashmap The hashmap implementation to use (e.g., std::unordered_map).
+ * @param data Input vector of integers to sort/count.
+ * @return std::vector<int> The reconstructed vector (modified in place).
+ */
 template<typename Hashmap>
 std::vector<int> histogramSort(std::vector<int>& data){
     Hashmap sorted;
@@ -51,6 +91,15 @@ std::vector<int> histogramSort(std::vector<int>& data){
     return data;
 }
 
+/**
+ * @brief Benchmark function for Histogram Sort.
+ * 
+ * Measures the time taken to perform the histogram sort operation
+ * on a copy of the random data.
+ * 
+ * @tparam Hashmap The hashmap implementation to benchmark.
+ * @param state Google Benchmark state object.
+ */
 template<typename Hashmap>
 static void BM_HistogramSort(benchmark::State& state){
     auto data = GenerateRandomData(state.range(0));

@@ -15,9 +15,10 @@ def parse_benchmark_name(full_name):
         return map_type, size
     return None, None
 
-def add_complexity_reference(ax, sizes, times, label, power=1, style='--', color='gray'):
+def add_complexity_reference(ax, sizes, times, label, power=1, style='--', color='gray', max_y_limit=None):
     """
     Adds a reference line (e.g. O(n), O(n^2)) scaled to match the first data point.
+    Trims the line if it exceeds max_y_limit to avoid distorting the graph scale.
     """
     if not sizes:
         return
@@ -33,9 +34,38 @@ def add_complexity_reference(ax, sizes, times, label, power=1, style='--', color
     C = y0 / (x0 ** power)
     
     # Generate y values for the reference line
-    ref_y = [C * (x ** power) for x in sizes]
+    ref_x = []
+    ref_y = []
     
-    ax.plot(sizes, ref_y, linestyle=style, color=color, alpha=0.7, label=f'Reference {label}', zorder=0)
+    for x in sizes:
+        y = C * (x ** power)
+        if max_y_limit and y > max_y_limit:
+            # If the point goes way beyond the limit, add it (clipped) and stop
+            ref_x.append(x)
+            ref_y.append(y)
+            break
+        ref_x.append(x)
+        ref_y.append(y)
+
+    # If the reference line is immediately out of bounds (less than 2 points), omit it
+    if len(ref_x) < 2:
+        return
+
+    ax.plot(ref_x, ref_y, linestyle=style, color=color, alpha=0.7, label=f'Reference {label}', zorder=0)
+
+def format_time(ns):
+    """
+    Format time in ns to ms, us, or ns based on a 0.01 threshold logic.
+    - If time in ms >= 0.01 (i.e., ns >= 10000), use ms.
+    - Else if time in us >= 0.01 (i.e., ns >= 10), use us.
+    - Else, use ns.
+    """
+    if ns >= 10000:  # 0.01 ms
+        return f"{ns/1e6:.2f} ms"
+    elif ns >= 100:   # 0.01 us
+        return f"{ns/1e3:.2f} us"
+    else:
+        return f"{ns:.2f} ns"
 
 def plot_benchmark(json_file, title=None, output_file=None):
     if not os.path.exists(json_file):
@@ -91,6 +121,13 @@ def plot_benchmark(json_file, title=None, output_file=None):
     max_size = max(all_sizes)
     sorted_all_sizes = sorted(list(all_sizes))
     
+    # Calculate global max Y from actual data to set limits
+    global_max_y = 0
+    for res in results.values():
+        local_max = max(res['times'])
+        if local_max > global_max_y:
+            global_max_y = local_max
+    
     # Find a baseline series (middle performer or just the first one) to anchor references
     # We'll use the first one in the list for simplicity, or the one with max range
     baseline_key = list(results.keys())[0]
@@ -103,6 +140,17 @@ def plot_benchmark(json_file, title=None, output_file=None):
         times = [p[1] for p in sorted_pairs]
         
         ax.plot(sizes, times, marker=markers[i % len(markers)], label=map_type, linewidth=2)
+
+        # Annotate each point with its value
+        for x, y in zip(sizes, times):
+            ax.annotate(format_time(y), 
+                        (x, y), 
+                        textcoords="offset points", 
+                        xytext=(0, 5), 
+                        ha='center', 
+                        fontsize=8,
+                        bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.5))
+        
         i += 1
 
     # Add Reference Lines
@@ -112,13 +160,14 @@ def plot_benchmark(json_file, title=None, output_file=None):
     ax.plot([min_size, max_size], [min_time, min_time], linestyle=':', color='black', alpha=0.5, label='O(1) Ref')
 
     # O(n) - Linear
-    add_complexity_reference(ax, sorted_all_sizes, baseline_times, "O(n)", power=1, style='--', color='gray')
+    # Pass max_y_limit to clip the reference line if it goes too high
+    add_complexity_reference(ax, sorted_all_sizes, baseline_times, "O(n)", power=1, style='--', color='gray', max_y_limit=global_max_y * 1.5)
     
     # O(n^2) - Quadratic (if relevant, usually for bad cases)
     # We anchor this to the LAST point to show how bad it COULD be, or first point.
     # Anchoring to first point often makes the line shoot off the graph too fast if the actual data is better.
     # Let's anchor to the baseline first point.
-    # add_complexity_reference(ax, sorted_all_sizes, baseline_times, "O(n^2)", power=2, style='-.', color='darkred')
+    # add_complexity_reference(ax, sorted_all_sizes, baseline_times, "O(n^2)", power=2, style='-.', color='darkred', max_y_limit=global_max_y * 1.5)
 
     # O(log n) - Logarithmic (often for tree maps)
     # y = C * log(x)
@@ -127,9 +176,13 @@ def plot_benchmark(json_file, title=None, output_file=None):
     
     ax.set_title(title, fontsize=16)
     ax.set_xlabel('Input Size (N)', fontsize=12)
-    ax.set_ylabel('CPU Time (ns)', fontsize=12)
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+    ax.set_ylabel('Time (ns)', fontsize=12)
+    # ax.set_xscale('log')
+    # ax.set_yscale('log')
+    
+    # Force Y-axis to zoom in on the actual data
+    ax.set_ylim(bottom=0, top=global_max_y * 1.15)
+    
     ax.grid(True, which="both", ls="-", alpha=0.5)
     ax.legend(fontsize=10, loc='upper left', bbox_to_anchor=(1, 1))
     plt.tight_layout()

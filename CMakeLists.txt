@@ -33,31 +33,6 @@ set(ABSL_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
 set(ABSL_PROPAGATE_CXX_STD ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(abseil-cpp)
 
-# TSL Robin Map
-# TSL Robin Map - REMOVED due to CMake compatibility issues
-# FetchContent_Declare(
-#   tsl-robin-map
-#   GIT_REPOSITORY https://github.com/Tessil/robin-map.git
-#   GIT_TAG v1.3.0
-# )
-# FetchContent_MakeAvailable(tsl-robin-map)
-
-# TSL Hopscotch Map - REMOVED
-# FetchContent_Declare(
-#   tsl-hopscotch-map
-#   GIT_REPOSITORY https://github.com/Tessil/hopscotch-map.git
-#   GIT_TAG v2.3.1
-# )
-# FetchContent_MakeAvailable(tsl-hopscotch-map)
-
-# TSL Ordered Map - REMOVED
-# FetchContent_Declare(
-#   tsl-ordered-map
-#   GIT_REPOSITORY https://github.com/Tessil/ordered-map.git
-#   GIT_TAG v1.1.0
-# )
-# FetchContent_MakeAvailable(tsl-ordered-map)
-
 # Martinus Robin Hood
 FetchContent_Declare(
   robin-hood-hashing
