@@ -94,7 +94,7 @@ def plot_benchmark(json_file, title=None, output_file=None):
             if map_type not in results:
                 results[map_type] = {'sizes': [], 'times': []}
             results[map_type]['sizes'].append(size)
-            results[map_type]['times'].append(bm['cpu_time'])
+            results[map_type]['times'].append(bm['real_time'])
             all_sizes.add(size)
 
     if not results:
@@ -108,7 +108,7 @@ def plot_benchmark(json_file, title=None, output_file=None):
     
     # Determine default title if not provided
     if not title:
-        title = f"Benchmark Results: {os.path.basename(json_file)}"
+        title = "Benchmark Results"
 
     # Plotting
     fig, ax = plt.subplots(figsize=(12, 8))
@@ -148,7 +148,7 @@ def plot_benchmark(json_file, title=None, output_file=None):
                         textcoords="offset points", 
                         xytext=(0, 5), 
                         ha='center', 
-                        fontsize=8,
+                        fontsize=12,
                         bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="none", alpha=0.5))
         
         i += 1
@@ -184,7 +184,7 @@ def plot_benchmark(json_file, title=None, output_file=None):
     ax.set_ylim(bottom=0, top=global_max_y * 1.15)
     
     ax.grid(True, which="both", ls="-", alpha=0.5)
-    ax.legend(fontsize=10, loc='upper left', bbox_to_anchor=(1, 1))
+    ax.legend(fontsize=10, loc='best')
     plt.tight_layout()
     
     plt.savefig(output_file)

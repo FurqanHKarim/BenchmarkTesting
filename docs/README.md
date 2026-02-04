@@ -7,6 +7,16 @@ This repository is designed to benchmark and compare various C++ containers and 
 - Analyze cache hit/miss impact on performance.
 - Document findings on what works fast vs. slow.
 
+## Key Findings 
+We benchmarked `std::unordered_map` against modern flat map implementations (`absl::flat_hash_map`, `phmap::flat_hash_map`, and `robin_hood::unordered_map`).
+
+**Results:**
+- **Flat maps are significantly faster**: Up to **2.7x faster** than `std::unordered_map` for both random access and histogram construction.
+- **Cache Locality matters**: The node-based structure of `std::unordered_map` causes frequent cache misses, whereas flat maps use contiguous memory.
+- **Recommendation**: Prefer `absl::flat_hash_map` or `phmap::flat_hash_map` for performance-critical hashmaps.
+
+👉 **[View Full Benchmark Results](../BENCHMARK_RESULTS.md)**
+
 ## Building and Running
 
 ### Prerequisites
